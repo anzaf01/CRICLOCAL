@@ -1,11 +1,19 @@
 import { useParams, Link } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { useEffect, useState } from "react";
 
 function TournamentDetails() {
   const { id } = useParams();
   const [tournament, setTournament] = useState(null);
+  const [teams, setTeams] = useState([]);
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -17,7 +25,24 @@ function TournamentDetails() {
       }
     };
 
+    const fetchTeams = async () => {
+      const q = query(
+        collection(db, "teams"),
+        where("tournamentId", "==", id)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const teamData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setTeams(teamData);
+    };
+
     fetchTournament();
+    fetchTeams();
   }, [id]);
 
   if (!tournament) {
@@ -51,6 +76,23 @@ function TournamentDetails() {
         >
           Create Match
         </Link>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">Teams</h2>
+
+        {teams.length === 0 ? (
+          <p className="text-gray-400">No teams added yet.</p>
+        ) : (
+          <div className="grid gap-3">
+            {teams.map((team) => (
+              <div key={team.id} className="bg-gray-900 p-4 rounded">
+                <h3 className="font-semibold">{team.teamName}</h3>
+                <p className="text-gray-300">Captain: {team.captain}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
