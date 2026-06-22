@@ -14,6 +14,7 @@ function TournamentDetails() {
   const { id } = useParams();
   const [tournament, setTournament] = useState(null);
   const [teams, setTeams] = useState([]);
+  const [matches, setMatches] = useState([]);
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -26,11 +27,7 @@ function TournamentDetails() {
     };
 
     const fetchTeams = async () => {
-      const q = query(
-        collection(db, "teams"),
-        where("tournamentId", "==", id)
-      );
-
+      const q = query(collection(db, "teams"), where("tournamentId", "==", id));
       const snapshot = await getDocs(q);
 
       const teamData = snapshot.docs.map((doc) => ({
@@ -41,8 +38,25 @@ function TournamentDetails() {
       setTeams(teamData);
     };
 
+    const fetchMatches = async () => {
+      const q = query(
+        collection(db, "matches"),
+        where("tournamentId", "==", id)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const matchData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setMatches(matchData);
+    };
+
     fetchTournament();
     fetchTeams();
+    fetchMatches();
   }, [id]);
 
   if (!tournament) {
@@ -90,6 +104,34 @@ function TournamentDetails() {
                 <h3 className="font-semibold">{team.teamName}</h3>
                 <p className="text-gray-300">Captain: {team.captain}</p>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">Matches</h2>
+
+        {matches.length === 0 ? (
+          <p className="text-gray-400">No matches created yet.</p>
+        ) : (
+          <div className="grid gap-3">
+            {matches.map((match) => (
+              <Link
+                to={`/match/${match.id}`}
+                key={match.id}
+                className="bg-gray-900 p-4 rounded block hover:bg-gray-800"
+              >
+                <h3 className="font-semibold">
+                  {match.teamA} vs {match.teamB}
+                </h3>
+
+                <p className="text-gray-300">Venue: {match.venue}</p>
+                <p className="text-green-400">
+                  Score: {match.runs}/{match.wickets} ({match.overs}.{match.balls})
+                </p>
+                <p>Status: {match.status}</p>
+              </Link>
             ))}
           </div>
         )}
