@@ -60,6 +60,7 @@ function CreateMatch() {
         overs: 0,
         balls: 0,
         status: "live",
+        history: [],
         createdAt: serverTimestamp(),
       });
 
