@@ -6,6 +6,12 @@ function CreateTournament() {
   const [tournamentName, setTournamentName] = useState("");
   const [location, setLocation] = useState("");
   const [overs, setOvers] = useState("");
+
+  const [winPoints, setWinPoints] = useState(2);
+  const [lossPoints, setLossPoints] = useState(0);
+  const [tiePoints, setTiePoints] = useState(1);
+  const [noResultPoints, setNoResultPoints] = useState(1);
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -18,6 +24,14 @@ function CreateTournament() {
         tournamentName,
         location,
         overs: Number(overs),
+
+        pointsRules: {
+          win: Number(winPoints),
+          loss: Number(lossPoints),
+          tie: Number(tiePoints),
+          noResult: Number(noResultPoints),
+        },
+
         createdAt: serverTimestamp(),
       });
 
@@ -26,6 +40,10 @@ function CreateTournament() {
       setTournamentName("");
       setLocation("");
       setOvers("");
+      setWinPoints(2);
+      setLossPoints(0);
+      setTiePoints(1);
+      setNoResultPoints(1);
     } catch (error) {
       console.error(error);
       alert("Error saving tournament");
@@ -67,6 +85,46 @@ function CreateTournament() {
           placeholder="Overs"
           value={overs}
           onChange={(e) => setOvers(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          required
+        />
+
+        <h2 className="text-xl font-bold text-green-400 mt-6 mb-4">
+          Points Rules
+        </h2>
+
+        <input
+          type="number"
+          placeholder="Points for Win"
+          value={winPoints}
+          onChange={(e) => setWinPoints(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Points for Loss"
+          value={lossPoints}
+          onChange={(e) => setLossPoints(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Points for Tie"
+          value={tiePoints}
+          onChange={(e) => setTiePoints(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Points for No Result"
+          value={noResultPoints}
+          onChange={(e) => setNoResultPoints(e.target.value)}
           className="w-full p-3 mb-4 rounded bg-gray-800"
           required
         />

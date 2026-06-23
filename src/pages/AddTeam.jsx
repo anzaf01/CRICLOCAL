@@ -8,24 +8,48 @@ function AddTeam() {
 
   const [teamName, setTeamName] = useState("");
   const [captain, setCaptain] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      setLoading(true);
+
+      // ================================
+      // SAVE TEAM
+      // ================================
       await addDoc(collection(db, "teams"), {
         tournamentId: id,
         teamName,
         captain,
       });
 
-      alert("Team Added");
+      // ================================
+      // CREATE POINTS TABLE RECORD
+      // ================================
+      await addDoc(collection(db, "pointsTable"), {
+        tournamentId: id,
+        teamName,
+
+        played: 0,
+        won: 0,
+        lost: 0,
+        tied: 0,
+        noResult: 0,
+
+        points: 0,
+      });
+
+      alert("Team Added and Points Table Updated");
 
       setTeamName("");
       setCaptain("");
     } catch (error) {
       console.error(error);
       alert("Error adding team");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,9 +83,10 @@ function AddTeam() {
 
         <button
           type="submit"
+          disabled={loading}
           className="w-full bg-green-500 text-black p-3 rounded font-semibold"
         >
-          Add Team
+          {loading ? "Adding..." : "Add Team"}
         </button>
       </form>
     </div>

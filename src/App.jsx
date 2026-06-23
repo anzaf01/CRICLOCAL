@@ -6,6 +6,7 @@ import TournamentDetails from "./pages/TournamentDetails";
 import AddTeam from "./pages/AddTeam";
 import CreateMatch from "./pages/CreateMatch";
 import MatchDetails from "./pages/MatchDetails";
+import PublicScoreboard from "./pages/PublicScoreboard";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/tournament/:id/add-team" element={<AddTeam />} />
       <Route path="/tournament/:id/create-match" element={<CreateMatch />} />
       <Route path="/match/:id" element={<MatchDetails />} />
+      <Route path="/public/:id" element={<PublicScoreboard />} />
     </Routes>
   );
 }

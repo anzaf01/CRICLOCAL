@@ -15,6 +15,7 @@ function TournamentDetails() {
   const [tournament, setTournament] = useState(null);
   const [teams, setTeams] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [pointsTable, setPointsTable] = useState([]);
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -54,9 +55,28 @@ function TournamentDetails() {
       setMatches(matchData);
     };
 
+    const fetchPointsTable = async () => {
+      const q = query(
+        collection(db, "pointsTable"),
+        where("tournamentId", "==", id)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const tableData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      tableData.sort((a, b) => b.points - a.points);
+
+      setPointsTable(tableData);
+    };
+
     fetchTournament();
     fetchTeams();
     fetchMatches();
+    fetchPointsTable();
   }, [id]);
 
   if (!tournament) {
@@ -90,6 +110,46 @@ function TournamentDetails() {
         >
           Create Match
         </Link>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">Points Table</h2>
+
+        {pointsTable.length === 0 ? (
+          <p className="text-gray-400">No points table available yet.</p>
+        ) : (
+          <div className="overflow-x-auto bg-gray-900 rounded-xl">
+            <table className="w-full text-left">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="p-3">Team</th>
+                  <th className="p-3">P</th>
+                  <th className="p-3">W</th>
+                  <th className="p-3">L</th>
+                  <th className="p-3">T</th>
+                  <th className="p-3">NR</th>
+                  <th className="p-3">Pts</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {pointsTable.map((team) => (
+                  <tr key={team.id} className="border-t border-gray-800">
+                    <td className="p-3 font-semibold">{team.teamName}</td>
+                    <td className="p-3">{team.played}</td>
+                    <td className="p-3">{team.won}</td>
+                    <td className="p-3">{team.lost}</td>
+                    <td className="p-3">{team.tied}</td>
+                    <td className="p-3">{team.noResult}</td>
+                    <td className="p-3 text-green-400 font-bold">
+                      {team.points}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="mt-10">
@@ -127,9 +187,12 @@ function TournamentDetails() {
                 </h3>
 
                 <p className="text-gray-300">Venue: {match.venue}</p>
+
                 <p className="text-green-400">
-                  Score: {match.runs}/{match.wickets} ({match.overs}.{match.balls})
+                  Score: {match.runs}/{match.wickets} ({match.overs}.
+                  {match.balls})
                 </p>
+
                 <p>Status: {match.status}</p>
               </Link>
             ))}
