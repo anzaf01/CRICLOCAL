@@ -59,7 +59,17 @@ function CreateMatch() {
         wickets: 0,
         overs: 0,
         balls: 0,
+
+        innings: 1,
+
+        firstInningsScore: null,
+        target: null,
+
+        battingTeam: teamA,
+        bowlingTeam: teamB,
+
         status: "live",
+
         history: [],
         createdAt: serverTimestamp(),
       });

@@ -211,8 +211,39 @@ function MatchDetails() {
         }
       }
     }
-  };
+  };  
+// ================================
+// END INNINGS
+// ================================
+const endInnings = async () => {
+  if (match.innings !== 1) {
+    alert("Only first innings can be ended");
+    return;
+  }
 
+  const docRef = doc(db, "matches", id);
+
+  await updateDoc(docRef, {
+    firstInningsScore: match.runs,
+    target: match.runs + 1,
+
+    innings: 2,
+
+    runs: 0,
+    wickets: 0,
+    overs: 0,
+    balls: 0,
+
+    battingTeam: match.bowlingTeam,
+    bowlingTeam: match.battingTeam,
+
+    history: [],
+  });
+
+  alert(`Target is ${match.runs + 1}`);
+
+  fetchMatch();
+};
   const endMatch = async (resultType, winner = null) => {
     const matchRef = doc(db, "matches", id);
 
@@ -286,7 +317,14 @@ function MatchDetails() {
         <p className="text-xl mt-2">
           Overs: {match.overs}.{match.balls}
         </p>
-
+         <p className="text-xl mt-2">
+          Innings: {match.innings}
+        </p>
+          {match.target && (
+         <p className="text-green-400 font-bold mt-2">
+           Target: {match.target}
+        </p>
+          )}
         <p className="mt-4 text-green-400">Status: {match.status}</p>
 
         {match.winner && (
@@ -343,6 +381,12 @@ function MatchDetails() {
             className="bg-purple-600 text-white p-4 rounded font-bold text-xl col-span-3"
           >
             End Match
+          </button>
+          <button
+           onClick={endInnings}
+           className="bg-cyan-600 text-white p-4 rounded font-bold text-xl col-span-3"
+          >
+            End Innings
           </button>
         </div>
       </div>
