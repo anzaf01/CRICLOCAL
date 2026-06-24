@@ -44,32 +44,62 @@ function MatchDetails() {
 
     fetchMatch();
   };
+// ================================
+// AUTO WIN CHECK
+// ================================
+const checkMatchResult = async (newRuns) => {
+  if (match.innings !== 2) return;
+  if (!match.target) return;
 
-  const addRuns = async (runsToAdd) => {
-    let newRuns = match.runs + runsToAdd;
-    let newWickets = match.wickets;
-    let newBalls = match.balls + 1;
-    let newOvers = match.overs;
+  if (newRuns >= match.target) {
+    const winner = match.battingTeam;
+    const loser = match.bowlingTeam;
 
-    if (newBalls === 6) {
-      newOvers += 1;
-      newBalls = 0;
+    if (!winner || !loser) {
+      alert("Batting/Bowling team is missing. Create a new match.");
+      return;
     }
 
-    saveEvent({
-      label: String(runsToAdd),
-      type: "run",
-      previousRuns: match.runs,
-      previousWickets: match.wickets,
-      previousOvers: match.overs,
-      previousBalls: match.balls,
-      newRuns,
-      newWickets,
-      newOvers,
-      newBalls,
-    });
-  };
+    const matchRef = doc(db, "matches", id);
 
+    await updateDoc(matchRef, {
+      status: "completed",
+      winner,
+      resultType: "win",
+    });
+
+    await updatePointsTable(winner, loser, "win");
+
+    alert(`${winner} won the match!`);
+    fetchMatch();
+  }
+};
+  const addRuns = async (runsToAdd) => {
+  let newRuns = match.runs + runsToAdd;
+  let newWickets = match.wickets;
+  let newBalls = match.balls + 1;
+  let newOvers = match.overs;
+
+  if (newBalls === 6) {
+    newOvers += 1;
+    newBalls = 0;
+  }
+
+  await saveEvent({
+    label: String(runsToAdd),
+    type: "run",
+    previousRuns: match.runs,
+    previousWickets: match.wickets,
+    previousOvers: match.overs,
+    previousBalls: match.balls,
+    newRuns,
+    newWickets,
+    newOvers,
+    newBalls,
+  });
+
+  await checkMatchResult(newRuns);
+};
   const addWide = async () => {
     saveEvent({
       label: "Wd",
@@ -286,6 +316,15 @@ const endInnings = async () => {
       </h1>
 
       <p className="mt-2 text-gray-300">📍 {match.venue}</p>
+      <div className="mt-4 bg-gray-900 p-4 rounded-xl">
+      <p className="text-green-400 font-semibold">
+        Batting: {match.battingTeam || "Not set"}
+      </p>
+
+      <p className="text-red-400 font-semibold mt-1">
+        Bowling: {match.bowlingTeam || "Not set"}
+      </p>
+    </div>
 
       <div className="mt-3 flex gap-3 items-center flex-wrap">
         <a
