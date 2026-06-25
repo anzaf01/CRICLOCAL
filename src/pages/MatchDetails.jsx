@@ -5,6 +5,7 @@ import MatchHeader from "../components/match/MatchHeader";
 import TeamInfo from "../components/match/TeamInfo";
 import Scoreboard from "../components/match/Scoreboard";
 import BallHistory from "../components/match/BallHistory";
+import ScoringPanel from "../components/match/ScoringPanel";
 
 import {
   doc,
@@ -365,69 +366,16 @@ const endInnings = async () => {
 
      <Scoreboard match={match} />
 
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Scoring Panel</h2>
-
-        <div className="grid grid-cols-3 gap-3 max-w-md">
-          {[0, 1, 2, 3, 4, 6].map((run) => (
-            <button
-              key={run}
-              onClick={() => addRuns(run)}
-              disabled={match.status === "completed"}
-              className="bg-green-500 text-black p-4 rounded font-bold text-xl"
-            >
-              {run}
-            </button>
-          ))}
-
-          <button
-            onClick={addWicket}
-            disabled={match.status === "completed"}
-            className="bg-red-500 text-white p-4 rounded font-bold text-xl col-span-3"
-          >
-            Wicket
-          </button>
-
-          <button
-            onClick={addWide}
-            disabled={match.status === "completed"}
-            className="bg-yellow-500 text-black p-4 rounded font-bold text-xl"
-          >
-            Wide
-          </button>
-
-          <button
-            onClick={addNoBall}
-            disabled={match.status === "completed"}       
-            className="bg-orange-500 text-black p-4 rounded font-bold text-xl"
-          >
-            No Ball
-          </button>
-
-          <button
-            onClick={undoLastEvent}
-            disabled={match.status === "completed"}
-            className="bg-gray-700 text-white p-4 rounded font-bold text-xl"
-          >
-            Undo
-          </button>
-
-          <button
-            onClick={() => setShowResultOptions(true)}
-            disabled={match.status === "completed"}
-            className="bg-purple-600 text-white p-4 rounded font-bold text-xl col-span-3"
-          >
-            End Match
-          </button>
-          <button
-           onClick={endInnings}
-           disabled={match.status === "completed"}
-           className="bg-cyan-600 text-white p-4 rounded font-bold text-xl col-span-3"
-          >
-            End Innings
-          </button>
-        </div>
-      </div>
+      <ScoringPanel
+       match={match}
+       addRuns={addRuns}
+       addWicket={addWicket}
+       addWide={addWide}
+       addNoBall={addNoBall}
+       undoLastEvent={undoLastEvent}
+       endInnings={endInnings}
+       setShowResultOptions={setShowResultOptions}
+      />
 
       {showResultOptions && (
         <div className="mt-6 bg-gray-900 p-6 rounded-xl max-w-md">
