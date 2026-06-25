@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../firebase/firebaseConfig";
+import MatchHeader from "../components/match/MatchHeader";
+import TeamInfo from "../components/match/TeamInfo";
+import Scoreboard from "../components/match/Scoreboard";
+import BallHistory from "../components/match/BallHistory";
 
 import {
   doc,
@@ -74,7 +78,7 @@ const checkMatchResult = async (newRuns) => {
     fetchMatch();
   }
 };
-  const addRuns = async (runsToAdd) => {
+const addRuns = async (runsToAdd) => {
   let newRuns = match.runs + runsToAdd;
   let newWickets = match.wickets;
   let newBalls = match.balls + 1;
@@ -98,7 +102,42 @@ const checkMatchResult = async (newRuns) => {
     newBalls,
   });
 
-  await checkMatchResult(newRuns);
+  await checkInningsEnd(newRuns, newWickets, newOvers, newBalls);
+};
+// ================================
+// CHECK IF INNINGS SHOULD END
+// ================================
+const checkInningsEnd = async (newRuns, newWickets, newOvers, newBalls) => {
+  const oversCompleted = newOvers >= match.maxOvers && newBalls === 0;
+
+  // First innings: end automatically when all out or overs completed
+  if (match.innings === 1) {
+    if (newWickets >= 10 || oversCompleted) {
+      await endInnings();
+      return;
+    }
+  }
+
+  // Second innings: target reached
+  if (match.innings === 2 && newRuns >= match.target) {
+    await checkMatchResult(newRuns);
+    return;
+  }
+
+  // Second innings: all out
+  if (match.innings === 2 && newWickets >= 10) {
+    await endMatch("win", match.bowlingTeam);
+    return;
+  }
+
+  // Second innings: overs completed
+  if (match.innings === 2 && oversCompleted) {
+    if (newRuns === match.target - 1) {
+      await endMatch("tie");
+    } else {
+      await endMatch("win", match.bowlingTeam);
+    }
+  }
 };
   const addWide = async () => {
     saveEvent({
@@ -131,28 +170,36 @@ const checkMatchResult = async (newRuns) => {
   };
 
   const addWicket = async () => {
-    let newBalls = match.balls + 1;
-    let newOvers = match.overs;
+  let newBalls = match.balls + 1;
+  let newOvers = match.overs;
 
-    if (newBalls === 6) {
-      newOvers += 1;
-      newBalls = 0;
-    }
+  if (newBalls === 6) {
+    newOvers += 1;
+    newBalls = 0;
+  }
 
-    saveEvent({
-      label: "W",
-      type: "wicket",
-      previousRuns: match.runs,
-      previousWickets: match.wickets,
-      previousOvers: match.overs,
-      previousBalls: match.balls,
-      newRuns: match.runs,
-      newWickets: match.wickets + 1,
-      newOvers,
-      newBalls,
-    });
-  };
+  const newWickets = match.wickets + 1;
 
+  await saveEvent({
+    label: "W",
+    type: "wicket",
+    previousRuns: match.runs,
+    previousWickets: match.wickets,
+    previousOvers: match.overs,
+    previousBalls: match.balls,
+    newRuns: match.runs,
+    newWickets,
+    newOvers,
+    newBalls,
+  });
+
+  await checkInningsEnd(
+    match.runs,
+    newWickets,
+    newOvers,
+    newBalls
+  );
+};
   const undoLastEvent = async () => {
     const history = match.history || [];
 
@@ -311,67 +358,12 @@ const endInnings = async () => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
-      <h1 className="text-4xl font-bold text-green-400">
-        {match.teamA} vs {match.teamB}
-      </h1>
+    <MatchHeader match={match} id={id} />
 
-      <p className="mt-2 text-gray-300">📍 {match.venue}</p>
-      <div className="mt-4 bg-gray-900 p-4 rounded-xl">
-      <p className="text-green-400 font-semibold">
-        Batting: {match.battingTeam || "Not set"}
-      </p>
+     <TeamInfo match={match} />
+      
 
-      <p className="text-red-400 font-semibold mt-1">
-        Bowling: {match.bowlingTeam || "Not set"}
-      </p>
-    </div>
-
-      <div className="mt-3 flex gap-3 items-center flex-wrap">
-        <a
-          href={`/public/${id}`}
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-400 underline"
-        >
-          Open Scoreboard
-        </a>
-
-        <button
-          onClick={() => {
-            const publicUrl = `${window.location.origin}/public/${id}`;
-            navigator.clipboard.writeText(publicUrl);
-            alert("Public link copied!");
-          }}
-          className="bg-blue-600 px-3 py-1 rounded text-white"
-        >
-          Copy Public Link
-        </button>
-      </div>
-
-      <div className="mt-8 bg-gray-900 p-6 rounded-xl">
-        <h2 className="text-5xl font-bold">
-          {match.runs}/{match.wickets}
-        </h2>
-
-        <p className="text-xl mt-2">
-          Overs: {match.overs}.{match.balls}
-        </p>
-         <p className="text-xl mt-2">
-          Innings: {match.innings}
-        </p>
-          {match.target && (
-         <p className="text-green-400 font-bold mt-2">
-           Target: {match.target}
-        </p>
-          )}
-        <p className="mt-4 text-green-400">Status: {match.status}</p>
-
-        {match.winner && (
-          <p className="mt-2 text-purple-400 font-semibold">
-            Winner: {match.winner}
-          </p>
-        )}
-      </div>
+     <Scoreboard match={match} />
 
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Scoring Panel</h2>
@@ -381,6 +373,7 @@ const endInnings = async () => {
             <button
               key={run}
               onClick={() => addRuns(run)}
+              disabled={match.status === "completed"}
               className="bg-green-500 text-black p-4 rounded font-bold text-xl"
             >
               {run}
@@ -389,6 +382,7 @@ const endInnings = async () => {
 
           <button
             onClick={addWicket}
+            disabled={match.status === "completed"}
             className="bg-red-500 text-white p-4 rounded font-bold text-xl col-span-3"
           >
             Wicket
@@ -396,6 +390,7 @@ const endInnings = async () => {
 
           <button
             onClick={addWide}
+            disabled={match.status === "completed"}
             className="bg-yellow-500 text-black p-4 rounded font-bold text-xl"
           >
             Wide
@@ -403,6 +398,7 @@ const endInnings = async () => {
 
           <button
             onClick={addNoBall}
+            disabled={match.status === "completed"}       
             className="bg-orange-500 text-black p-4 rounded font-bold text-xl"
           >
             No Ball
@@ -410,6 +406,7 @@ const endInnings = async () => {
 
           <button
             onClick={undoLastEvent}
+            disabled={match.status === "completed"}
             className="bg-gray-700 text-white p-4 rounded font-bold text-xl"
           >
             Undo
@@ -417,12 +414,14 @@ const endInnings = async () => {
 
           <button
             onClick={() => setShowResultOptions(true)}
+            disabled={match.status === "completed"}
             className="bg-purple-600 text-white p-4 rounded font-bold text-xl col-span-3"
           >
             End Match
           </button>
           <button
            onClick={endInnings}
+           disabled={match.status === "completed"}
            className="bg-cyan-600 text-white p-4 rounded font-bold text-xl col-span-3"
           >
             End Innings
@@ -475,26 +474,10 @@ const endInnings = async () => {
         </div>
       )}
 
-      <div className="mt-10 bg-gray-900 p-6 rounded-xl max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Ball History</h2>
-
-        {match.history && match.history.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {match.history.map((ball, index) => (
-              <span
-                key={index}
-                className="bg-gray-800 px-3 py-2 rounded font-semibold"
-              >
-                {ball.label}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-400">No balls yet.</p>
-        )}
-      </div>
+     
+      <BallHistory match={match} />
     </div>
   );
-}
+};
 
 export default MatchDetails;

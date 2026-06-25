@@ -7,6 +7,8 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 
@@ -14,12 +16,23 @@ function CreateMatch() {
   const { id } = useParams();
 
   const [teams, setTeams] = useState([]);
+  const [tournament, setTournament] = useState(null);
+
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
   const [venue, setVenue] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const fetchTournament = async () => {
+      const docRef = doc(db, "tournaments", id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        setTournament(docSnap.data());
+      }
+    };
+
     const fetchTeams = async () => {
       const q = query(
         collection(db, "teams"),
@@ -36,11 +49,17 @@ function CreateMatch() {
       setTeams(teamData);
     };
 
+    fetchTournament();
     fetchTeams();
   }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!tournament) {
+      alert("Tournament data is still loading");
+      return;
+    }
 
     if (teamA === teamB) {
       alert("Team A and Team B cannot be same");
@@ -52,25 +71,28 @@ function CreateMatch() {
 
       await addDoc(collection(db, "matches"), {
         tournamentId: id,
+
         teamA,
         teamB,
         venue,
+
+        battingTeam: teamA,
+        bowlingTeam: teamB,
+
         runs: 0,
         wickets: 0,
         overs: 0,
         balls: 0,
 
         innings: 1,
-
         firstInningsScore: null,
         target: null,
 
-        battingTeam: teamA,
-        bowlingTeam: teamB,
+        maxOvers: Number(tournament.overs),
 
         status: "live",
-
         history: [],
+
         createdAt: serverTimestamp(),
       });
 
@@ -92,6 +114,12 @@ function CreateMatch() {
       <h1 className="text-3xl font-bold text-green-400 mb-6">
         Create Match
       </h1>
+
+      {tournament && (
+        <p className="text-gray-300 mb-4">
+          Match Overs: {tournament.overs}
+        </p>
+      )}
 
       {teams.length < 2 ? (
         <div>
