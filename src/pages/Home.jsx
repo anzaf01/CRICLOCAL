@@ -11,12 +11,19 @@ function Home() {
           clubs and turf matches.
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 flex gap-4 justify-center">
           <Link
-            to="/dashboard"
+            to="/login"
             className="bg-green-500 text-black px-6 py-3 rounded-lg font-semibold hover:bg-green-400"
           >
-            Go to Dashboard
+            Login
+          </Link>
+
+          <Link
+            to="/register"
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700"
+          >
+            Register
           </Link>
         </div>
       </div>

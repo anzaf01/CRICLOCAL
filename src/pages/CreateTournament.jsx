@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { auth } from "../firebase/firebaseConfig";
 
 function CreateTournament() {
   const [tournamentName, setTournamentName] = useState("");
@@ -24,6 +25,9 @@ function CreateTournament() {
         tournamentName,
         location,
         overs: Number(overs),
+
+         ownerId: auth.currentUser.uid,
+         ownerEmail: auth.currentUser.email,
 
         pointsRules: {
           win: Number(winPoints),
