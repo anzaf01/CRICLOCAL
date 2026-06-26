@@ -224,72 +224,156 @@ const checkInningsEnd = async (newRuns, newWickets, newOvers, newBalls) => {
     fetchMatch();
   };
 
-  const updatePointsTable = async (teamOne, teamTwo, resultType) => {
-    const tournamentRef = doc(db, "tournaments", match.tournamentId);
-    const tournamentSnap = await getDoc(tournamentRef);
+const oversToDecimal = (overs, balls) => {
+  return overs + balls / 6;
+};
 
-    if (!tournamentSnap.exists()) {
-      alert("Tournament not found");
-      return;
+const calculateNRR = (
+  runsScored,
+  oversFaced,
+  runsConceded,
+  oversBowled
+) => {
+  if (oversFaced === 0 || oversBowled === 0) {
+    return 0;
+  }
+
+  const nrr =
+    runsScored / oversFaced -
+    runsConceded / oversBowled;
+
+  return Number(nrr.toFixed(2));
+};
+
+const updatePointsTable = async (teamOne, teamTwo, resultType) => {
+  const tournamentRef = doc(db, "tournaments", match.tournamentId);
+  const tournamentSnap = await getDoc(tournamentRef);
+
+  if (!tournamentSnap.exists()) {
+    alert("Tournament not found");
+    return;
+  }
+
+  const pointsRules = tournamentSnap.data().pointsRules || {
+    win: 2,
+    loss: 0,
+    tie: 1,
+    noResult: 1,
+  };
+
+  const firstInningsOversDecimal = oversToDecimal(
+    match.firstInningsOvers || 0,
+    match.firstInningsBalls || 0
+  );
+
+  const secondInningsOversDecimal = oversToDecimal(
+    match.overs || 0,
+    match.balls || 0
+  );
+
+  const teamAStats = {
+    runsScored: match.firstInningsScore || 0,
+    oversFaced: firstInningsOversDecimal,
+    runsConceded: match.runs || 0,
+    oversBowled: secondInningsOversDecimal,
+  };
+
+  const teamBStats = {
+    runsScored: match.runs || 0,
+    oversFaced: secondInningsOversDecimal,
+    runsConceded: match.firstInningsScore || 0,
+    oversBowled: firstInningsOversDecimal,
+  };
+
+  const q = query(
+    collection(db, "pointsTable"),
+    where("tournamentId", "==", match.tournamentId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  for (const teamDoc of snapshot.docs) {
+    const team = teamDoc.data();
+    const teamRef = doc(db, "pointsTable", teamDoc.id);
+
+    let played = team.played || 0;
+    let won = team.won || 0;
+    let lost = team.lost || 0;
+    let tied = team.tied || 0;
+    let noResult = team.noResult || 0;
+    let points = team.points || 0;
+
+    let runsScored = team.runsScored || 0;
+    let oversFaced = team.oversFaced || 0;
+    let runsConceded = team.runsConceded || 0;
+    let oversBowled = team.oversBowled || 0;
+
+    if (team.teamName === match.teamA) {
+      runsScored += teamAStats.runsScored;
+      oversFaced += teamAStats.oversFaced;
+      runsConceded += teamAStats.runsConceded;
+      oversBowled += teamAStats.oversBowled;
     }
 
-    const pointsRules = tournamentSnap.data().pointsRules || {
-      win: 2,
-      loss: 0,
-      tie: 1,
-      noResult: 1,
-    };
+    if (team.teamName === match.teamB) {
+      runsScored += teamBStats.runsScored;
+      oversFaced += teamBStats.oversFaced;
+      runsConceded += teamBStats.runsConceded;
+      oversBowled += teamBStats.oversBowled;
+    }
 
-    const q = query(
-      collection(db, "pointsTable"),
-      where("tournamentId", "==", match.tournamentId)
+    if (resultType === "win") {
+      if (team.teamName === teamOne) {
+        played += 1;
+        won += 1;
+        points += pointsRules.win;
+      }
+
+      if (team.teamName === teamTwo) {
+        played += 1;
+        lost += 1;
+        points += pointsRules.loss;
+      }
+    }
+
+    if (resultType === "tie") {
+      if (team.teamName === teamOne || team.teamName === teamTwo) {
+        played += 1;
+        tied += 1;
+        points += pointsRules.tie;
+      }
+    }
+
+    if (resultType === "noResult") {
+      if (team.teamName === teamOne || team.teamName === teamTwo) {
+        played += 1;
+        noResult += 1;
+        points += pointsRules.noResult;
+      }
+    }
+
+    const nrr = calculateNRR(
+      runsScored,
+      oversFaced,
+      runsConceded,
+      oversBowled
     );
 
-    const snapshot = await getDocs(q);
-
-    for (const teamDoc of snapshot.docs) {
-      const team = teamDoc.data();
-      const teamRef = doc(db, "pointsTable", teamDoc.id);
-
-      if (resultType === "win") {
-        if (team.teamName === teamOne) {
-          await updateDoc(teamRef, {
-            played: team.played + 1,
-            won: team.won + 1,
-            points: team.points + pointsRules.win,
-          });
-        }
-
-        if (team.teamName === teamTwo) {
-          await updateDoc(teamRef, {
-            played: team.played + 1,
-            lost: team.lost + 1,
-            points: team.points + pointsRules.loss,
-          });
-        }
-      }
-
-      if (resultType === "tie") {
-        if (team.teamName === teamOne || team.teamName === teamTwo) {
-          await updateDoc(teamRef, {
-            played: team.played + 1,
-            tied: team.tied + 1,
-            points: team.points + pointsRules.tie,
-          });
-        }
-      }
-
-      if (resultType === "noResult") {
-        if (team.teamName === teamOne || team.teamName === teamTwo) {
-          await updateDoc(teamRef, {
-            played: team.played + 1,
-            noResult: team.noResult + 1,
-            points: team.points + pointsRules.noResult,
-          });
-        }
-      }
-    }
-  };  
+    await updateDoc(teamRef, {
+      played,
+      won,
+      lost,
+      tied,
+      noResult,
+      points,
+      runsScored,
+      oversFaced,
+      runsConceded,
+      oversBowled,
+      nrr,
+    });
+  }
+};
 // ================================
 // END INNINGS
 // ================================
@@ -302,7 +386,9 @@ const endInnings = async () => {
   const docRef = doc(db, "matches", id);
 
   await updateDoc(docRef, {
-    firstInningsScore: match.runs,
+   firstInningsOvers: match.overs,
+   firstInningsBalls: match.balls,
+   firstInningsScore: match.runs,
     target: match.runs + 1,
 
     innings: 2,

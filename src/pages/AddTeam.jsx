@@ -39,7 +39,15 @@ function AddTeam() {
         noResult: 0,
 
         points: 0,
-      });
+
+        runsScored: 0,
+        oversFaced: 0,
+
+        runsConceded: 0,
+        oversBowled: 0,
+
+        nrr: 0,
+    });
 
       alert("Team Added and Points Table Updated");
 

@@ -69,33 +69,37 @@ function CreateMatch() {
     try {
       setLoading(true);
 
-      await addDoc(collection(db, "matches"), {
-        tournamentId: id,
+     await addDoc(collection(db, "matches"), {
+       tournamentId: id,
 
-        teamA,
-        teamB,
-        venue,
+       teamA,
+       teamB,
+       venue,
 
-        battingTeam: teamA,
-        bowlingTeam: teamB,
+       status: "upcoming",
+       resultText: "",
+       completedAt: null,
 
-        runs: 0,
-        wickets: 0,
-        overs: 0,
-        balls: 0,
+       battingTeam: teamA,
+       bowlingTeam: teamB,
 
-        innings: 1,
-        firstInningsScore: null,
-        target: null,
+       runs: 0,
+       wickets: 0,
+       overs: 0,
+       balls: 0,
 
-        maxOvers: Number(tournament.overs),
+       innings: 1,
+       firstInningsScore: null,
+       firstInningsOvers: null,
+       firstInningsBalls: null,
+       target: null,
 
-        status: "live",
-        history: [],
+       maxOvers: Number(tournament.overs),
 
-        createdAt: serverTimestamp(),
-      });
+       history: [],
 
+       createdAt: serverTimestamp(),
+    });
       alert("Match created successfully!");
 
       setTeamA("");
