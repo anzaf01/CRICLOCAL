@@ -55,23 +55,36 @@ function TournamentDetails() {
       setMatches(matchData);
     };
 
-    const fetchPointsTable = async () => {
-      const q = query(
-        collection(db, "pointsTable"),
-        where("tournamentId", "==", id)
-      );
+     const fetchPointsTable = async () => {
+  const q = query(
+    collection(db, "pointsTable"),
+    where("tournamentId", "==", id)
+  );
 
-      const snapshot = await getDocs(q);
+  const snapshot = await getDocs(q);
 
-      const tableData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+  const tableData = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 
-      tableData.sort((a, b) => b.points - a.points);
+  tableData.sort((a, b) => {
+    // 1. Higher points first
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
 
-      setPointsTable(tableData);
-    };
+    // 2. More wins first
+    if (b.won !== a.won) {
+      return b.won - a.won;
+    }
+
+    // 3. Alphabetical order
+    return a.teamName.localeCompare(b.teamName);
+  });
+
+  setPointsTable(tableData);
+};
 
     fetchTournament();
     fetchTeams();
@@ -133,20 +146,37 @@ function TournamentDetails() {
               </thead>
 
               <tbody>
-                {pointsTable.map((team) => (
-                  <tr key={team.id} className="border-t border-gray-800">
-                    <td className="p-3 font-semibold">{team.teamName}</td>
-                    <td className="p-3">{team.played}</td>
-                    <td className="p-3">{team.won}</td>
-                    <td className="p-3">{team.lost}</td>
-                    <td className="p-3">{team.tied}</td>
-                    <td className="p-3">{team.noResult}</td>
-                    <td className="p-3 text-green-400 font-bold">
-                      {team.points}
-                    </td>
+                {pointsTable.map((team, index) => (
+                  <tr
+                   key={team.id}
+                   className={`border-t border-gray-800 ${
+                   index === 0 ? "bg-green-900/30" : ""
+                  }`}
+                 >
+                 <td className="p-3 font-bold">
+                  {index + 1}
+                 </td>
+
+                 <td className="p-3 font-semibold">
+                  {team.teamName}
+                 </td>
+
+                 <td className="p-3">{team.played}</td>
+                 <td className="p-3">{team.won}</td>
+                 <td className="p-3">{team.lost}</td>
+                 <td className="p-3">{team.tied}</td>
+                 <td className="p-3">{team.noResult}</td>
+
+                 <td className="p-3">
+                   {team.nrr ?? "0.00"}
+                  </td>
+
+                   <td className="p-3 text-green-400 font-bold">
+                    {team.points}
+                   </td>
                   </tr>
-                ))}
-              </tbody>
+              ))}
+               </tbody>
             </table>
           </div>
         )}
