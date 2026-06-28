@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   doc,
   getDoc,
+  updateDoc,
   collection,
   query,
   where,
@@ -94,6 +95,29 @@ function TournamentDetails() {
     fetchPointsTable();
   }, [id]);
 
+  const endTournament = async () => {
+    const confirmEnd = window.confirm(
+      "Are you sure you want to end this tournament? You should only do this after all matches are completed."
+    );
+
+    if (!confirmEnd) return;
+
+    const tournamentRef = doc(db, "tournaments", id);
+
+    await updateDoc(tournamentRef, {
+      status: "completed",
+      endedAt: new Date(),
+    });
+
+    alert("Tournament ended successfully!");
+
+    setTournament({
+      ...tournament,
+      status: "completed",
+      endedAt: new Date(),
+    });
+  };
+
   if (!tournament) {
     return (
       <div className="min-h-screen bg-gray-950 text-white p-6">
@@ -111,20 +135,37 @@ function TournamentDetails() {
       <p className="mt-2">📍 {tournament.location}</p>
       <p>🏏 {tournament.overs} Overs</p>
 
-      <div className="mt-8 flex gap-4 flex-wrap">
-        <Link
-          to={`/tournament/${id}/add-team`}
-          className="bg-green-500 text-black px-4 py-2 rounded font-semibold"
-        >
-          Add Team
-        </Link>
+      {tournament.status === "completed" && (
+        <p className="mt-3 text-red-400 font-semibold">
+          🏆 Tournament Completed
+        </p>
+      )}
 
-        <Link
-          to={`/tournament/${id}/create-match`}
-          className="bg-blue-500 text-white px-4 py-2 rounded font-semibold"
-        >
-          Create Match
-        </Link>
+      <div className="mt-8 flex gap-4 flex-wrap">
+        {tournament.status !== "completed" && (
+          <>
+            <Link
+              to={`/tournament/${id}/add-team`}
+              className="bg-green-500 text-black px-4 py-2 rounded font-semibold"
+            >
+              Add Team
+            </Link>
+
+            <Link
+              to={`/tournament/${id}/create-match`}
+              className="bg-blue-500 text-white px-4 py-2 rounded font-semibold"
+            >
+              Create Match
+            </Link>
+
+            <button
+              onClick={endTournament}
+              className="bg-red-600 text-white px-4 py-2 rounded font-semibold"
+            >
+              End Tournament
+            </button>
+          </>
+        )}
       </div>
 
       <div className="mt-10">

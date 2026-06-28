@@ -34,6 +34,8 @@ function CreateTournament() {
           loss: Number(lossPoints),
           tie: Number(tiePoints),
           noResult: Number(noResultPoints),
+          status: "active",
+          endedAt: null,
         },
 
         createdAt: serverTimestamp(),
