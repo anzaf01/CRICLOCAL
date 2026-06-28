@@ -45,6 +45,7 @@ function MatchDetails() {
       overs: event.newOvers,
       balls: event.newBalls,
       history: [...currentHistory, event],
+      status: "live",
     });
 
     fetchMatch();
