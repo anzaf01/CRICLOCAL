@@ -286,7 +286,7 @@ function TournamentDetails() {
         )}
       </div>
 
-      <div className="mt-10">
+        <div className="mt-10">
         <h2 className="text-2xl font-bold mb-4">Teams</h2>
 
         {teams.length === 0 ? (
@@ -294,9 +294,16 @@ function TournamentDetails() {
         ) : (
           <div className="grid gap-3">
             {teams.map((team) => (
-              <div key={team.id} className="bg-gray-900 p-4 rounded">
-                <h3 className="font-semibold">{team.teamName}</h3>
+              <div
+                to={`/team/${team.id}`}
+                key={team.id}
+                className="bg-gray-900 p-4 rounded block hover:bg-gray-800 transition"
+              >
+                <h3 className="font-semibold text-lg">{team.teamName}</h3>
+
                 <p className="text-gray-300">Captain: {team.captain}</p>
+
+                
               </div>
             ))}
           </div>

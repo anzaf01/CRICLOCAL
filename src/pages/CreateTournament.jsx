@@ -7,6 +7,8 @@ function CreateTournament() {
   const [tournamentName, setTournamentName] = useState("");
   const [location, setLocation] = useState("");
   const [overs, setOvers] = useState("");
+  const [maxPlayers, setMaxPlayers] = useState("");
+  const [playingSquadSize, setPlayingSquadSize] = useState("");
 
   const [winPoints, setWinPoints] = useState(2);
   const [lossPoints, setLossPoints] = useState(0);
@@ -20,11 +22,17 @@ function CreateTournament() {
 
     try {
       setLoading(true);
+    if (Number(playingSquadSize) > Number(maxPlayers)) {
+      alert("Playing Squad Size cannot be greater than Maximum Players Per Team.");
+      return;
+    }  
 
       await addDoc(collection(db, "tournaments"), {
         tournamentName,
         location,
         overs: Number(overs),
+        maxPlayers: Number(maxPlayers),
+        playingSquadSize: Number(playingSquadSize),
 
          ownerId: auth.currentUser.uid,
          ownerEmail: auth.currentUser.email,
@@ -46,6 +54,8 @@ function CreateTournament() {
       setTournamentName("");
       setLocation("");
       setOvers("");
+      setMaxPlayers("");
+      setPlayingSquadSize("");
       setWinPoints(2);
       setLossPoints(0);
       setTiePoints(1);
@@ -98,6 +108,25 @@ function CreateTournament() {
         <h2 className="text-xl font-bold text-green-400 mt-6 mb-4">
           Points Rules
         </h2>
+        <input
+          type="number"
+          placeholder="Maximum Players Per Team"
+          value={maxPlayers}
+          onChange={(e) => setMaxPlayers(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          min="1"
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Playing Squad Size"
+          value={playingSquadSize}
+          onChange={(e) => setPlayingSquadSize(e.target.value)}
+          className="w-full p-3 mb-4 rounded bg-gray-800"
+          min="1"
+          required
+        />
 
         <input
           type="number"
